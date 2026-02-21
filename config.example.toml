@@ -1,0 +1,42 @@
+[capture]
+source = "pipe"  # "pipe" (stdin from wifi_coconut) or path to pcap file
+
+[coral]
+model_dir = "./models"
+use_edgetpu = true  # false = CPU fallback for dev/testing
+
+[known_networks]
+# Your legitimate networks - AP legitimacy model uses this as ground truth
+networks = [
+    { ssid = "Toshiro", bssids = ["C4:F1:74:FA:70:73"] },
+    { ssid = "Chromatic", bssids = ["AA:CF:84:03:9E:91", "A0:36:BC:11:32:D0", "A0:36:BC:11:32:D5"] },
+]
+
+[detection]
+anomaly_threshold = 0.75       # anomaly score above this triggers alert
+ap_confidence_threshold = 0.85 # below this = suspicious AP
+deauth_confidence_threshold = 0.80  # above this = likely attack
+window_seconds = 30            # sliding window for aggregated features
+
+[alerting]
+dedup_seconds = 60
+max_alerts_per_minute = 10
+
+[alerting.ntfy]
+enabled = true
+server = "https://ntfy.sh"
+topic = "cocosentry-alerts"
+
+[alerting.webhook]
+enabled = false
+url = "https://example.com/webhook"
+
+[alerting.mqtt]
+enabled = false
+broker = "localhost"
+port = 1883
+topic = "cocosentry/alerts"
+
+[storage]
+db_path = "./cocosentry.db"
+retain_days = 30  # auto-purge events older than this
