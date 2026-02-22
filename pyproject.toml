@@ -17,7 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 coral = [
-    "pycoral>=2.0.0",
+    "pycoral>=0.2.0",
     "tflite-runtime>=2.14.0",
 ]
 mqtt = [

@@ -1,0 +1,40 @@
+services:
+  cocosentry:
+    build:
+      context: .
+      target: runtime
+    privileged: true
+    network_mode: host
+    stdin_open: true
+    restart: unless-stopped
+    volumes:
+      - ./config.toml:/app/config.toml:ro
+      - ./models:/app/models
+      - cocosentry-data:/data
+      - /dev/bus/usb:/dev/bus/usb
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    profiles: [mqtt]
+    network_mode: host
+    volumes:
+      - mosquitto-data:/mosquitto/data
+
+  training:
+    build:
+      context: .
+      target: training
+    profiles: [training]
+    volumes:
+      - ./models:/app/models
+      - cocosentry-data:/data
+
+  dev:
+    build:
+      context: .
+      target: dev
+    profiles: [dev]
+
+volumes:
+  cocosentry-data:
+  mosquitto-data:

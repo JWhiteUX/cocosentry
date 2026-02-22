@@ -1,0 +1,14 @@
+.venv/
+.git/
+.gitignore
+.pytest_cache/
+__pycache__/
+*.pyc
+*.db
+config.toml
+models/*.tflite
+.claude/
+Dockerfile
+docker-compose.yml
+LICENSE
+README.md
