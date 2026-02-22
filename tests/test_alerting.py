@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+import tempfile
 import time
+from pathlib import Path
 
 import pytest
 
 from cocosentry.alerting.engine import AlertEngine, StdoutBackend
 from cocosentry.config import AlertConfig
+from cocosentry.storage.db import Database
 from cocosentry.storage.models import Alert
 
 
@@ -86,3 +89,55 @@ class TestAlertEngine:
         # First 3 should succeed, rest rate-limited
         # (rate limit counts include all attempts in the minute)
         assert sum(results) <= 4  # some tolerance for timing
+
+    @pytest.mark.asyncio
+    async def test_fire_persists_to_database(self):
+        db = Database(Path(tempfile.mkdtemp()) / "test.db")
+        db.connect()
+        config = AlertConfig(dedup_seconds=60, max_alerts_per_minute=10)
+        engine = AlertEngine(config, db=db)
+
+        alert = Alert(
+            severity="critical",
+            category="rogue_ap",
+            title="Rogue AP detected",
+            detail="Evil twin spotted",
+            source_mac="aa:bb:cc:dd:ee:ff",
+            bssid="de:ad:be:ef:00:01",
+            channel=6,
+        )
+        result = await engine.fire(alert)
+        assert result is True
+
+        events = db.get_recent_events(limit=10)
+        assert len(events) == 1
+        assert events[0]["category"] == "rogue_ap"
+        assert events[0]["severity"] == "critical"
+        assert events[0]["bssid"] == "de:ad:be:ef:00:01"
+        assert events[0]["channel"] == 6
+        db.close()
+
+    @pytest.mark.asyncio
+    async def test_suppressed_alerts_not_persisted(self):
+        db = Database(Path(tempfile.mkdtemp()) / "test.db")
+        db.connect()
+        config = AlertConfig(dedup_seconds=60, max_alerts_per_minute=10)
+        engine = AlertEngine(config, db=db)
+
+        alert = Alert(
+            severity="warning",
+            category="test",
+            title="Test",
+            detail="",
+            source_mac="aa:bb:cc:dd:ee:ff",
+            bssid="11:22:33:44:55:66",
+        )
+
+        # First fire persists
+        await engine.fire(alert)
+        # Second fire is deduped — should not persist
+        await engine.fire(alert)
+
+        events = db.get_recent_events(limit=10)
+        assert len(events) == 1
+        db.close()
