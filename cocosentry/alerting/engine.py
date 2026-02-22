@@ -8,6 +8,7 @@ import time
 from collections import deque
 
 from cocosentry.config import AlertConfig
+from cocosentry.storage.db import Database
 from cocosentry.storage.models import Alert
 
 logger = logging.getLogger(__name__)
@@ -47,10 +48,11 @@ class StdoutBackend(AlertBackend):
 class AlertEngine:
     """Dispatches alerts to backends with deduplication and rate limiting."""
 
-    def __init__(self, config: AlertConfig):
+    def __init__(self, config: AlertConfig, db: Database | None = None):
         self.dedup_window = config.dedup_seconds
         self.rate_limit = config.max_alerts_per_minute
         self.backends: list[AlertBackend] = [StdoutBackend()]
+        self._db = db
 
         # Dedup: (category, source_mac, bssid) -> last fire time
         self._dedup_cache: dict[tuple[str, str | None, str | None], float] = {}
@@ -102,6 +104,13 @@ class AlertEngine:
                     type(self.backends[i]).__name__,
                     result,
                 )
+
+        # Persist to database
+        if self._db:
+            try:
+                self._db.insert_event(alert)
+            except Exception as e:
+                logger.error("Failed to persist alert event: %s", e)
 
         # Periodically clean dedup cache
         if len(self._dedup_cache) > 1000:

@@ -69,13 +69,13 @@ class Pipeline:
         self.device_clf = DeviceClassifier(self.coral)
         self.anomaly_det = AnomalyDetector(self.coral, config.detection.anomaly_threshold)
 
-        # Alerting
-        self.alert_engine = AlertEngine(config.alerting)
-        self._setup_alert_backends()
-
         # Storage
         self.db = Database(config.storage.db_path)
         self.db.connect()
+
+        # Alerting
+        self.alert_engine = AlertEngine(config.alerting, db=self.db)
+        self._setup_alert_backends()
 
         # Counters
         self.frame_count = 0
