@@ -11,4 +11,3 @@ models/*.tflite
 Dockerfile
 docker-compose.yml
 LICENSE
-README.md

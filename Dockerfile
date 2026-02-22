@@ -28,10 +28,10 @@ WORKDIR /app
 # ── Stage 2: runtime (default) ──────────────────────────────────
 FROM base AS runtime
 
-COPY pyproject.toml .
+COPY pyproject.toml README.md ./
+COPY cocosentry/ cocosentry/
 RUN pip install --no-cache-dir ".[coral,mqtt]"
 
-COPY cocosentry/ cocosentry/
 COPY config.example.toml .
 
 RUN mkdir -p /app/models /data

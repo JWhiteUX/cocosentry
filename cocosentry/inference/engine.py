@@ -9,10 +9,10 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# Try to import pycoral, fall back to tflite-runtime, then tf.lite
+# Try to import pycoral, fall back to tflite-runtime (+edgetpu delegate), then tf.lite
 _BACKEND = "none"
 _make_interpreter = None
-_load_delegate = None
+_edgetpu_delegate = None
 
 try:
     from pycoral.utils.edgetpu import make_interpreter as _pycoral_make_interpreter
@@ -22,8 +22,14 @@ try:
 except ImportError:
     try:
         import tflite_runtime.interpreter as tflite
-        _BACKEND = "tflite_runtime"
-        logger.info("Using tflite-runtime CPU backend")
+        # Try to load Edge TPU delegate (libedgetpu.so.1 must be installed)
+        try:
+            _edgetpu_delegate = tflite.load_delegate("libedgetpu.so.1")
+            _BACKEND = "edgetpu"
+            logger.info("Using tflite-runtime + Edge TPU delegate backend")
+        except (ValueError, OSError):
+            _BACKEND = "tflite_runtime"
+            logger.info("Using tflite-runtime CPU backend")
     except ImportError:
         try:
             import tensorflow as tf
@@ -90,7 +96,14 @@ class CoralEngine:
         if self.use_edgetpu and _make_interpreter is not None:
             return _make_interpreter(model_path)
 
-        if _BACKEND == "tflite_runtime":
+        if self.use_edgetpu and _edgetpu_delegate is not None:
+            import tflite_runtime.interpreter as tflite
+            return tflite.Interpreter(
+                model_path=model_path,
+                experimental_delegates=[_edgetpu_delegate],
+            )
+
+        if _BACKEND in ("tflite_runtime", "edgetpu"):
             import tflite_runtime.interpreter as tflite
             return tflite.Interpreter(model_path=model_path)
 
