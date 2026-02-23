@@ -4,6 +4,25 @@ Real-time WiFi security monitoring daemon that combines the [Hak5 WiFi Coconut](
 
 Goes beyond rule-based alerting by using trained models to detect rogue APs, deauth attacks, device fingerprinting through randomized MACs, and RF environment anomalies — all running locally with no cloud dependency.
 
+---
+
+## ⚠️ Work in Progress
+
+CocoSentry is under active development and not yet production-ready. Core detection functionality works, but several areas are still being built out and tested:
+
+- **Interactive TUI** — dashboard UI is incomplete
+- **TPU model training** — Edge TPU compilation pipeline needs additional validation
+- **USB passthrough** — known issues with Coral and WiFi Coconut device handoff in containerized environments
+- **Logging** — structured logging is inconsistent across modules
+- **Containerization** — Dockerfile and compose config are being refactored
+- **Alerts & messaging** — deduplication logic and backend routing are being revisited
+
+Expect breaking changes between commits. No stable release has been tagged.
+
+**Use on networks and hardware you own or have explicit authorization to monitor.** This tool is designed for authorized security research and home lab environments.
+
+---
+
 ## Features
 
 - **Rogue AP Detection** — ML classifier identifies evil twin APs by analyzing beacon IE ordering, supported rates, timing jitter, and vendor fingerprints
@@ -174,3 +193,4 @@ python -m pytest tests/ -v
 ## License
 
 MIT
+
