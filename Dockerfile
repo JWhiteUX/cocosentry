@@ -1,5 +1,5 @@
 # ── Stage 1: base ────────────────────────────────────────────────
-FROM python:3.11-slim-bookworm AS base
+FROM python:3.15-rc-slim-trixie AS base
 
 ARG INSTALL_EDGETPU=true
 
