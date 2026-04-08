@@ -37,12 +37,14 @@ class NtfyConfig:
     enabled: bool = False
     server: str = "https://ntfy.sh"
     topic: str = "cocosentry-alerts"
+    token: str = ""  # ntfy access token for authentication
 
 
 @dataclass
 class WebhookConfig:
     enabled: bool = False
     url: str = ""
+    headers: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -51,6 +53,9 @@ class MqttConfig:
     broker: str = "localhost"
     port: int = 1883
     topic: str = "cocosentry/alerts"
+    username: str = ""
+    password: str = ""
+    tls: bool = False
 
 
 @dataclass

@@ -26,16 +26,21 @@ max_alerts_per_minute = 10
 enabled = true
 server = "https://ntfy.sh"
 topic = "cocosentry-alerts"
+# token = ""  # ntfy access token for authentication
 
 [alerting.webhook]
 enabled = false
 url = "https://example.com/webhook"
+# headers = { Authorization = "Bearer YOUR_TOKEN" }
 
 [alerting.mqtt]
 enabled = false
 broker = "localhost"
 port = 1883
 topic = "cocosentry/alerts"
+# username = ""
+# password = ""
+# tls = false
 
 [storage]
 db_path = "./cocosentry.db"

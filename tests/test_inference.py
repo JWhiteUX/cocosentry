@@ -55,6 +55,18 @@ class TestCoralEngine:
             with pytest.raises(ValueError, match="Model not loaded"):
                 engine.classify("missing", np.zeros(10))
 
+    def test_path_traversal_blocked(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            engine = CoralEngine(Path(tmpdir), use_edgetpu=False)
+            result = engine.load_model("evil", filename="../../etc/passwd")
+            assert result is False
+
+    def test_path_traversal_dotdot_blocked(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            engine = CoralEngine(Path(tmpdir), use_edgetpu=False)
+            result = engine.load_model("evil", filename="../outside.tflite")
+            assert result is False
+
     def test_normalize(self):
         arr = np.array([1.0, 5.0, 3.0])
         result = CoralEngine._normalize(arr)

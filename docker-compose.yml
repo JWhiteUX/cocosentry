@@ -3,6 +3,9 @@ services:
     build:
       context: .
       target: runtime
+    # privileged + host networking required for USB device access:
+    # - WiFi Coconut USB adapter (802.11 monitor mode)
+    # - Coral Edge TPU USB accelerator
     privileged: true
     network_mode: host
     stdin_open: true

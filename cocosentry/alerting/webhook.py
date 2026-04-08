@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from urllib.parse import urlparse
 
 import httpx
 
@@ -18,13 +19,23 @@ class WebhookBackend(AlertBackend):
 
     def __init__(self, config: WebhookConfig):
         self.url = config.url
+        self.headers = dict(config.headers)
+        self._validate_url()
         self._client = httpx.AsyncClient(timeout=10.0)
+
+    def _validate_url(self) -> None:
+        """Validate webhook URL uses http or https scheme."""
+        parsed = urlparse(self.url)
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(
+                f"Webhook URL must use http or https scheme, got: {parsed.scheme!r}"
+            )
 
     async def send(self, alert: Alert) -> bool:
         payload = alert.to_dict()
 
         try:
-            resp = await self._client.post(self.url, json=payload)
+            resp = await self._client.post(self.url, json=payload, headers=self.headers)
             resp.raise_for_status()
             logger.debug("Webhook alert sent: %s", alert.title)
             return True

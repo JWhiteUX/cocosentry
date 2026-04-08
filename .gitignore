@@ -25,6 +25,9 @@ env/
 .coverage
 htmlcov/
 
+# User config (contains real network SSIDs/BSSIDs)
+config.toml
+
 # Runtime data
 *.db
 *.sqlite

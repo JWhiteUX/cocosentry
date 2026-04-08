@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -144,4 +146,14 @@ class TestDatabase:
         baselines = db.get_baselines("ap_legitimacy")
         assert len(baselines) == 1
         assert baselines[0]["label"] == "known"
+        db.close()
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="chmod not meaningful on Windows")
+    def test_new_db_has_restricted_permissions(self):
+        tmpdir = tempfile.mkdtemp()
+        db_path = Path(tmpdir) / "perm_test.db"
+        db = Database(db_path)
+        db.connect()
+        mode = os.stat(db_path).st_mode & 0o777
+        assert mode == 0o600, f"Expected 0o600, got {oct(mode)}"
         db.close()

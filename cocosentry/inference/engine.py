@@ -46,7 +46,7 @@ class CoralEngine:
     """
 
     def __init__(self, model_dir: Path, use_edgetpu: bool = True):
-        self.model_dir = Path(model_dir)
+        self.model_dir = Path(model_dir).resolve()
         self.use_edgetpu = use_edgetpu and _BACKEND == "edgetpu"
         self._interpreters: dict[str, object] = {}
         self._input_details: dict[str, list] = {}
@@ -65,7 +65,14 @@ class CoralEngine:
         if filename is None:
             filename = f"{name}.tflite"
 
-        model_path = self.model_dir / filename
+        model_path = (self.model_dir / filename).resolve()
+        if not model_path.is_relative_to(self.model_dir):
+            logger.error(
+                "Model path traversal blocked: %s is outside %s",
+                model_path, self.model_dir,
+            )
+            return False
+
         if not model_path.exists():
             logger.warning("Model file not found: %s", model_path)
             return False

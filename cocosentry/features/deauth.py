@@ -170,7 +170,7 @@ class DeauthAnalyzer:
             is_disassoc=is_disassoc,
         )
 
-    def cleanup(self, max_age: float = 300.0) -> None:
+    def cleanup(self, max_age: float = 300.0, max_sources: int = 5000) -> None:
         """Remove stale tracking data older than max_age seconds."""
         now = time.time()
         cutoff = now - max_age
@@ -189,3 +189,20 @@ class DeauthAnalyzer:
         self._client_activity = {
             k: v for k, v in self._client_activity.items() if v > cutoff
         }
+
+        # Cap total tracked sources to prevent unbounded growth
+        if len(self._deauth_times) > max_sources:
+            oldest = sorted(
+                self._deauth_times.keys(),
+                key=lambda k: self._deauth_times[k][-1] if self._deauth_times[k] else 0,
+            )
+            for k in oldest[:len(oldest) // 2]:
+                del self._deauth_times[k]
+
+        if len(self._data_times) > max_sources:
+            oldest = sorted(
+                self._data_times.keys(),
+                key=lambda k: self._data_times[k][-1] if self._data_times[k] else 0,
+            )
+            for k in oldest[:len(oldest) // 2]:
+                del self._data_times[k]

@@ -132,9 +132,11 @@ class WindowAggregator:
             rssi=frame.rssi,
         ))
 
-        # Track all-time BSSIDs
+        # Track all-time BSSIDs (cap to prevent unbounded growth)
         if frame.bssid:
             self._all_known_bssids.add(frame.bssid)
+        if len(self._all_known_bssids) > 50000:
+            self._all_known_bssids.clear()
 
         self._prune()
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from cocosentry.config import AppConfig, load_config
+from cocosentry.config import AppConfig, MqttConfig, NtfyConfig, WebhookConfig, load_config
 
 
 class TestConfig:
@@ -37,3 +37,49 @@ class TestConfig:
             assert config.capture.source == "test.pcap"
             # Defaults should fill in
             assert config.detection.window_seconds == 30
+
+
+class TestSecurityConfigDefaults:
+    """Verify new security-related config fields have safe defaults."""
+
+    def test_ntfy_token_default(self):
+        config = NtfyConfig()
+        assert config.token == ""
+
+    def test_webhook_headers_default(self):
+        config = WebhookConfig()
+        assert config.headers == {}
+
+    def test_mqtt_auth_defaults(self):
+        config = MqttConfig()
+        assert config.username == ""
+        assert config.password == ""
+        assert config.tls is False
+
+    def test_load_config_with_auth_fields(self):
+        toml_content = """\
+[alerting.webhook]
+enabled = true
+url = "https://example.com/hook"
+headers = { Authorization = "Bearer test123" }
+
+[alerting.ntfy]
+enabled = true
+token = "tk_secret"
+
+[alerting.mqtt]
+enabled = true
+username = "user"
+password = "pass"
+tls = true
+"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".toml", delete=False) as f:
+            f.write(toml_content)
+            f.flush()
+
+            config = load_config(Path(f.name))
+            assert config.alerting.webhook.headers == {"Authorization": "Bearer test123"}
+            assert config.alerting.ntfy.token == "tk_secret"
+            assert config.alerting.mqtt.username == "user"
+            assert config.alerting.mqtt.password == "pass"
+            assert config.alerting.mqtt.tls is True

@@ -295,6 +295,21 @@ class BeaconAnalyzer:
 
         return result
 
+    def cleanup(self, max_bssids: int = 5000) -> None:
+        """Prune beacon timing data if too many BSSIDs tracked."""
+        if len(self._beacon_times) <= max_bssids:
+            return
+        # Keep BSSIDs with most recent activity
+        sorted_bssids = sorted(
+            self._beacon_times.keys(),
+            key=lambda b: self._beacon_times[b][-1] if self._beacon_times[b] else 0,
+            reverse=True,
+        )
+        keep = set(sorted_bssids[:max_bssids // 2])
+        self._beacon_times = defaultdict(list, {
+            k: v for k, v in self._beacon_times.items() if k in keep
+        })
+
     def _update_jitter(self, bssid: str, timestamp: float, interval_tu: int) -> float:
         """Track beacon arrival times and compute jitter (stddev of inter-beacon timing)."""
         if not bssid:

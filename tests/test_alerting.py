@@ -10,7 +10,9 @@ from pathlib import Path
 import pytest
 
 from cocosentry.alerting.engine import AlertEngine, StdoutBackend
-from cocosentry.config import AlertConfig
+from cocosentry.alerting.ntfy import NtfyBackend
+from cocosentry.alerting.webhook import WebhookBackend
+from cocosentry.config import AlertConfig, NtfyConfig, WebhookConfig
 from cocosentry.storage.db import Database
 from cocosentry.storage.models import Alert
 
@@ -141,3 +143,51 @@ class TestAlertEngine:
         events = db.get_recent_events(limit=10)
         assert len(events) == 1
         db.close()
+
+
+class TestWebhookSecurity:
+    def test_rejects_ftp_url(self):
+        config = WebhookConfig(enabled=True, url="ftp://evil.com/hook")
+        with pytest.raises(ValueError, match="http or https"):
+            WebhookBackend(config)
+
+    def test_rejects_javascript_url(self):
+        config = WebhookConfig(enabled=True, url="javascript:alert(1)")
+        with pytest.raises(ValueError, match="http or https"):
+            WebhookBackend(config)
+
+    def test_rejects_empty_scheme(self):
+        config = WebhookConfig(enabled=True, url="//no-scheme.com/hook")
+        with pytest.raises(ValueError, match="http or https"):
+            WebhookBackend(config)
+
+    def test_accepts_https(self):
+        config = WebhookConfig(enabled=True, url="https://example.com/hook")
+        backend = WebhookBackend(config)
+        assert backend.url == "https://example.com/hook"
+
+    def test_accepts_http(self):
+        config = WebhookConfig(enabled=True, url="http://localhost:8080/hook")
+        backend = WebhookBackend(config)
+        assert backend.url == "http://localhost:8080/hook"
+
+    def test_headers_stored(self):
+        config = WebhookConfig(
+            enabled=True,
+            url="https://example.com/hook",
+            headers={"Authorization": "Bearer secret123"},
+        )
+        backend = WebhookBackend(config)
+        assert backend.headers == {"Authorization": "Bearer secret123"}
+
+
+class TestNtfySecurity:
+    def test_token_stored(self):
+        config = NtfyConfig(enabled=True, token="tk_mytoken123")
+        backend = NtfyBackend(config)
+        assert backend.token == "tk_mytoken123"
+
+    def test_no_token_by_default(self):
+        config = NtfyConfig(enabled=True)
+        backend = NtfyBackend(config)
+        assert backend.token == ""

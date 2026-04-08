@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sqlite3
 import time
 from pathlib import Path
@@ -86,7 +87,18 @@ class Database:
 
     def connect(self) -> None:
         """Open database connection and initialize schema."""
+        db_path = Path(self.db_path)
+        is_new = not db_path.exists()
+
         self._conn = sqlite3.connect(self.db_path)
+
+        if is_new:
+            try:
+                os.chmod(self.db_path, 0o600)
+                logger.debug("Set database permissions to 0600: %s", self.db_path)
+            except OSError as e:
+                logger.warning("Could not set database permissions: %s", e)
+
         self._conn.row_factory = sqlite3.Row
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA synchronous=NORMAL")

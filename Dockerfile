@@ -34,7 +34,15 @@ RUN pip install --no-cache-dir ".[coral,mqtt]"
 
 COPY config.example.toml .
 
-RUN mkdir -p /app/models /data
+# Create non-root user for runtime.
+# Note: The container still requires privileged mode and host networking
+# for USB device access (WiFi Coconut adapter and Coral Edge TPU).
+RUN groupadd -r cocosentry && \
+    useradd -r -g cocosentry -d /app -s /sbin/nologin cocosentry && \
+    mkdir -p /app/models /data && \
+    chown -R cocosentry:cocosentry /app /data
+
+USER cocosentry
 
 ENTRYPOINT ["python", "-m", "cocosentry"]
 CMD ["--config", "/app/config.toml", "-v"]
@@ -42,7 +50,9 @@ CMD ["--config", "/app/config.toml", "-v"]
 # ── Stage 3: training ───────────────────────────────────────────
 FROM runtime AS training
 
+USER root
 RUN pip install --no-cache-dir ".[training]"
+USER cocosentry
 
 COPY training/ training/
 
@@ -51,7 +61,9 @@ ENTRYPOINT ["python"]
 # ── Stage 4: dev ─────────────────────────────────────────────────
 FROM training AS dev
 
+USER root
 RUN pip install --no-cache-dir ".[dev]"
+USER cocosentry
 
 COPY tests/ tests/
 

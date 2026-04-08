@@ -32,6 +32,7 @@ class NtfyBackend(AlertBackend):
     def __init__(self, config: NtfyConfig):
         self.server = config.server.rstrip("/")
         self.topic = config.topic
+        self.token = config.token
         self._client = httpx.AsyncClient(timeout=10.0)
 
     async def send(self, alert: Alert) -> bool:
@@ -42,6 +43,9 @@ class NtfyBackend(AlertBackend):
             "Priority": PRIORITY_MAP.get(alert.severity, "3"),
             "Tags": TAG_MAP.get(alert.category, "warning"),
         }
+
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
 
         # Add click action for rogue APs (could link to dashboard)
         if alert.bssid:

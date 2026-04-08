@@ -356,6 +356,7 @@ class Pipeline:
 
     def _cleanup(self) -> None:
         """Periodic cleanup of tracking state."""
+        self.beacon_ext.cleanup()
         self.deauth_ext.cleanup()
         self.probe_ext.cleanup()
         self.db.purge_old_events(self.config.storage.retain_days)

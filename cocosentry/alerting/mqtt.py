@@ -27,6 +27,18 @@ class MqttBackend(AlertBackend):
                 client_id="cocosentry",
                 protocol=mqtt.MQTTv5,
             )
+
+            if config.tls:
+                self._client.tls_set()  # uses system CA store
+                if config.port == 1883:
+                    logger.warning(
+                        "MQTT TLS enabled but port is 1883; "
+                        "standard TLS port is 8883"
+                    )
+
+            if config.username:
+                self._client.username_pw_set(config.username, config.password)
+
             self._client.connect(self.broker, self.port, keepalive=60)
             self._client.loop_start()
             logger.info("MQTT connected to %s:%d", self.broker, self.port)
